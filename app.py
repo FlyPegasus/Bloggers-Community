@@ -2,7 +2,7 @@ from flask import Flask, abort, render_template, redirect, url_for, request, fla
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import LoginForm, SignUpForm
+from forms import LoginForm, SignUpForm, BlogForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -15,11 +15,28 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 
+# data models for database
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
-    # todos = db.relationship('Todo', backref='user', lazy=True)
+    blogs = db.relationship('Blog', backref='user', lazy=True)
+    comments = db.relationship('Comment', backref='user', lazy=True)
+
+
+class Blog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100))
+    content = db.Column(db.String(10000))
+    userid = db.Column(db.Integer, db.ForeignKey('user.id'))
+    comments = db.relationship('Comment', backref='blog', lazy=True)
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(10000))
+    userid = db.Column(db.Integer, db.ForeignKey('user.id'))
+    blogid = db.Column(db.Integer, db.ForeignKey('blog.id'))
 
 
 @login_manager.user_loader
@@ -81,7 +98,26 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return f'Hello, {current_user.username}! Welcome to your dashboard.'
+    return render_template('dashboard.html')
+
+
+# blog views
+@app.route('/blog', methods=['GET', 'POST'])
+@login_required
+def blog_post():
+    form = BlogForm()
+    if form.validate_on_submit():
+        b_post = Blog()
+        b_post.title = form.title.data
+        b_post.content = form.content.data
+        b_post.userid = current_user.id  # Link the blog post to the current user
+        db.session.add(b_post)
+        db.session.commit()
+        flash('New blog posted!', 'success')
+        blogs = current_user.blogs
+        return redirect(url_for('blog_post'))
+    blogs = current_user.blogs
+    return render_template('blog.html', blogs=blogs, form=form)
 
 
 if __name__ == '__main__':
