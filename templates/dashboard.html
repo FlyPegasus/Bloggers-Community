@@ -16,6 +16,7 @@
     {% endif %}
     {% endwith %}
     <p>Welcome, {{ current_user.username }}!</p>
+    <div>To add blogs -> <a href="{{ url_for('blog_post') }}">click here!</a></div><br>
     <a href="{{ url_for('logout') }}">Logout</a>
 </body>
 </html>

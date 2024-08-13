@@ -6,7 +6,7 @@ from forms import LoginForm, SignUpForm, BlogForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://todo_db_0bnc_user:wmn8RupULwcVFdZj0Tinoqx3V6joLqMg@dpg-cqtdkajv2p9s73de0lc0-a.oregon-postgres.render.com/todo_db_0bnc'  # 'sqlite:///users.db'
 db = SQLAlchemy(app)
 
 # creating flask login instance
@@ -61,7 +61,8 @@ def register():
             flash('Username already exists.')
             return redirect(url_for('register'))
 
-        hashed_password = generate_password_hash(password, method='sha256')
+        hashed_password = generate_password_hash(
+            password, method='pbkdf2:sha256')
         new_user = User(username=username, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
